@@ -13,6 +13,7 @@ use AppBundle\Entity\Committee;
 use AppBundle\Geocoder\Coordinates;
 use AppBundle\Membership\AdherentEmailSubscription;
 use AppBundle\Referent\ManagedAreaUtils;
+use AppBundle\ValueObject\Genders;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -511,5 +512,16 @@ class AdherentRepository extends EntityRepository implements UserLoaderInterface
         return array_map(function (UuidInterface $uuid) {
             return $uuid->toString();
         }, array_column($query->getArrayResult(), 'uuid'));
+    }
+
+    public function countByGendreAndTotal(): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->select('COUNT(a.id) AS total, SUM(case WHEN a.gender = :female then 1 else 0 end) AS female, SUM(case WHEN a.gender = :male then 1 else 0 end) AS male')
+            ->setParameter('female', Genders::FEMALE)
+            ->setParameter('male', Genders::MALE)
+        ;
+
+        return $qb->getQuery()->getResult()[0];
     }
 }
